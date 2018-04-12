@@ -1,7 +1,8 @@
 # depslib dependency file v1.0
-1523232645 source:/home/aluno/Trabalho/DebugConsole/main.c
+1523535591 source:/home/aluno/Trabalho/DebugConsole/main.c
 	<stdio.h>
 	<stdlib.h>
+	<string.h>
 	"../include/cthread.h"
 
 1521934283 /home/aluno/Trabalho/include/cthread.h

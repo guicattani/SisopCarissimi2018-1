@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1523232916 source:/home/aluno/Trabalho/src/cthread.c
+1523535621 source:/home/aluno/Trabalho/src/cthread.c
 	"../include/support.h"
 	"../include/cthread.h"
 	<stdio.h>

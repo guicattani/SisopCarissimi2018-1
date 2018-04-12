@@ -12,6 +12,14 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int cidentify (char *name, int size){
+    int index = 0;
+
+    if(name == NULL)
+        return -1;
+
+    for (; index < size; index++){
+        putchar(name[index]);
+    }
     return 0;
 };
 
