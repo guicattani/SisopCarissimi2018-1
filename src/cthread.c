@@ -2,6 +2,8 @@
 #include "../include/cthread.h"
 #include <stdio.h>
 
+#define STACKMEM 64000 // fica no header e aqui tambem?
+
 /******************************************************************************
 Parâmetros:
 	name:	ponteiro para uma área de memória onde deve ser escrito um string que contém os nomes dos componentes do grupo e seus números de cartão.
@@ -17,6 +19,7 @@ int cidentify (char *name, int size){
     if(name == NULL)
         return -1;
 
+    Random2();
     for (; index < size; index++){
         putchar(name[index]);
     }
