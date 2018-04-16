@@ -1,8 +1,13 @@
 #include "../include/support.h"
+#include "../include/scheduler.h"
 #include "../include/cthread.h"
+#include "../include/cdata.h"
 #include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
-#define STACKMEM 64000 // fica no header e aqui tambem?
+#define STACKMEM 8192 // fica no header e aqui tambem?
+#define SIZEIDENTIFY 67
 
 /******************************************************************************
 Parâmetros:
@@ -16,10 +21,9 @@ Retorno:
 int cidentify (char *name, int size){
     int index = 0;
 
-    if(name == NULL)
+    if(name == NULL || size > SIZEIDENTIFY)
         return -1;
 
-    Random2();
     for (; index < size; index++){
         putchar(name[index]);
     }
@@ -36,7 +40,30 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int ccreate (void* (*start)(void*), void *arg, int prio){
-    return 0;
+    schedulerInitialize();
+
+    TCB_t *new_thread = (TCB_t *) malloc(sizeof(TCB_t));
+    new_thread->tid = getNewTid(); //vamos usar a main como 0, aí vai facilitar no cjoin
+    new_thread->state = PROCST_APTO;
+    new_thread->prio = 0;
+    new_thread->joinedWaitingTo = -1;
+    new_thread->joinedBeingWaitBy = -1;
+
+//    new_thread.context.uc_link = getContextToFinishProcess(); //como gerenciar os contextos sem ter certeza de que vai ter outro?
+//    new_thread.context.uc_stack.ss_sp = malloc(STACKMEM); //como liberar essa memória depois? Colocar um processo só pra garbage colection?
+//    new_thread.context.uc_stack.ss_size = STACKMEM;
+//    new_thread.context.uc_stack.ss_flags = 0;
+//não sei se isso é necessário,
+//    vamos tentar sem
+
+    makecontext(&(new_thread->context), (void (*)(void)) start, 1, arg);
+
+    int status = putInReadyQueue(new_thread);
+
+    if(status < 0)
+        return status;
+    else
+        return new_thread->tid;
 };
 
 
@@ -48,6 +75,7 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int cyield(void){
+    //TODO implementação
     return 0;
 };
 
@@ -60,7 +88,24 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int cjoin(int tid){
-    return 0;
+    TCB_t* joined_thread = getTidFromReadyQueue(tid);
+
+    if(joined_thread != NULL && joined_thread->joinedBeingWaitBy < 0){
+        TCB_t *executing_thread = getExecutingThread();
+        executing_thread->joinedWaitingTo = tid;
+        joined_thread->joinedBeingWaitBy = executing_thread->tid;
+
+        getcontext(&(executing_thread->context));
+        int status =  blockExecutingThread();
+        if(status < 0)
+            return -1;
+
+        dispatch();
+        return 0;
+    }
+
+
+    return -1;
 };
 
 /******************************************************************************
@@ -71,6 +116,7 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int csuspend(int tid){
+    //TODO implementação
     return 0;
 };
 
@@ -82,6 +128,7 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int cresume(int tid){
+    //TODO implementação
     return 0;
 };
 
@@ -94,6 +141,7 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int csem_init(csem_t *sem, int count){
+    //TODO implementação
     return 0;
 };
 
@@ -106,6 +154,7 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int cwait(csem_t *sem){
+    //TODO implementação
     return 0;
 };
 
@@ -118,6 +167,7 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int csignal(csem_t *sem){
+    //TODO implementação
     return 0;
 };
 
