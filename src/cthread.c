@@ -40,7 +40,7 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int ccreate (void* (*start)(void*), void *arg, int prio){
-    schedulerInitialize();
+     schedulerInitialize();
 
     TCB_t *new_thread = (TCB_t *) malloc(sizeof(TCB_t));
     new_thread->tid = getNewTid(); //vamos usar a main como 0, aí vai facilitar no cjoin
@@ -48,13 +48,12 @@ int ccreate (void* (*start)(void*), void *arg, int prio){
     new_thread->prio = 0;
     new_thread->joinedWaitingTo = -1;
     new_thread->joinedBeingWaitBy = -1;
+    new_thread->isSuspended = false;
 
-//    new_thread.context.uc_link = getContextToFinishProcess(); //como gerenciar os contextos sem ter certeza de que vai ter outro?
-//    new_thread.context.uc_stack.ss_sp = malloc(STACKMEM); //como liberar essa memória depois? Colocar um processo só pra garbage colection?
-//    new_thread.context.uc_stack.ss_size = STACKMEM;
-//    new_thread.context.uc_stack.ss_flags = 0;
-//não sei se isso é necessário,
-//    vamos tentar sem
+    new_thread->context.uc_link = getContextToFinishProcess(); //como gerenciar os contextos sem ter certeza de que vai ter outro?
+    new_thread->context.uc_stack.ss_sp = malloc(STACKMEM); //como liberar essa memória depois? Colocar um processo só pra garbage colection?
+    new_thread->context.uc_stack.ss_size = STACKMEM;
+    new_thread->context.uc_stack.ss_flags = 0;
 
     makecontext(&(new_thread->context), (void (*)(void)) start, 1, arg);
 

@@ -36,7 +36,7 @@ Retorno:
     Se correto:         devolve 0
     Se erro ocorreu:    devolve < 0
 **/
-int finishThread();
+void finishThread();
 
 
 /**

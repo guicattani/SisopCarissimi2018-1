@@ -5,7 +5,6 @@
 
 void* func0(void *arg) {
 	printf("Eu sou a thread ID0 imprimindo %d\n", *((int *)arg));
-	return;
 }
 
 void* func1(void *arg) {

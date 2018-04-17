@@ -10,6 +10,7 @@
 #ifndef __cdata__
 #define __cdata__
 #include "ucontext.h"
+#include <stdbool.h>
 
 #define	PROCST_CRIACAO	0
 #define	PROCST_APTO	1
@@ -32,6 +33,8 @@ typedef struct s_TCB {
 	/* Se necessário, pode-se acresecentar campos nessa estrutura A PARTIR DAQUI! */
 	int         joinedWaitingTo;
 	int         joinedBeingWaitBy;
+
+	bool        isSuspended;
 
 } TCB_t;
 

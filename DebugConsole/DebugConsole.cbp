@@ -34,6 +34,7 @@
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../include/cdata.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />

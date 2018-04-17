@@ -7,7 +7,7 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="libTrab1SisopCarissimi2018-1" prefix_auto="1" extension_auto="1" />
+				<Option output="lib/libTrab1SisopCarissimi2018-1" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="" />
 				<Option object_output="obj/Debug/" />
 				<Option type="2" />
@@ -35,6 +35,9 @@
 			</Target>
 		</Build>
 		<Unit filename="src/cthread.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/scheduler.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Extensions>
