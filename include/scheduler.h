@@ -63,34 +63,22 @@ int getNewTid(void);
 
 /**
 (Precisamos de uma função pra cada fila que inserirmos porque no escopo estático não é possível chamar de outro arquivo)
-putInReadyQueue
+putInReadyList
     Bota a thread na fila especificada
 Parâmetros:
-    PFILA2 queue, lista na qual thread será inserida
+    PFILA2 List, lista na qual thread será inserida
     TCB_t *thread, thread que será inserida na lista
 Retorno:
     Se correto:         devolve 0
     Se erro ocorreu:    devolve < 0
 **/
-int putInReadyQueue (TCB_t *thread);
+//static int putInList (PFILA2 pointer_list, TCB_t* thread);
 
-
-/**
-(Precisamos de uma função pra cada fila que inserirmos porque no escopo estático não é possível chamar de outro arquivo)
-putInBlockedQueue
-    Bota a thread na fila especificada
-Parâmetros:
-    PFILA2 queue, lista na qual thread será inserida
-    TCB_t *thread, thread que será inserida na lista
-Retorno:
-    Se correto:         devolve 0
-    Se erro ocorreu:    devolve < 0
-**/
-int putInBlockedQueue (TCB_t *thread);
-
+int includeInReadyList (TCB_t* thread);
+int includeInBlockedList (TCB_t* thread);
 
 /**
-getTidFromReadyQueue
+getTidFromReadyList
     Pega o tid da fila de aptos
 Parâmetros:
     int tid, tid a ser procurada
@@ -98,7 +86,18 @@ Retorno:
     Se correto:         devolve TCB_t* da thread
     Se erro ocorreu:    devolve NULL
 **/
-TCB_t* getTidFromReadyQueue(int tid);
+TCB_t* getTidFromReadyList(int tid);
+/**
+
+getTidFromBlockedList
+    Pega o tid da fila de bloqueados
+Parâmetros:
+    int tid, tid a ser procurada
+Retorno:
+    Se correto:         devolve TCB_t* da thread
+    Se erro ocorreu:    devolve NULL
+**/
+TCB_t* getTidFromBlockedList(int tid);
 
 
 /**
@@ -122,3 +121,17 @@ Retorno:
     Se erro ocorreu:    devolve < 0
 **/
 int blockExecutingThread(void);
+/**
+
+unblockThread
+    Tira no estado bloqueado a thread especificada
+Parâmetros:
+    void
+Retorno:
+    Se correto:         devolve 0
+    Se erro ocorreu:    devolve < 0
+**/
+int unblockThread(int tid);
+
+
+//static void printListsAndExecuting(void);

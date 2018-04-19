@@ -31,7 +31,7 @@ typedef struct s_TCB {
 	ucontext_t 	context;	// contexto de execução da thread (SP, PC, GPRs e recursos)
 
 	/* Se necessário, pode-se acresecentar campos nessa estrutura A PARTIR DAQUI! */
-	int         joinedWaitingTo;
+	int         joinedWaitingToFinish;
 	int         joinedBeingWaitBy;
 
 	bool        isSuspended;

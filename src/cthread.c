@@ -43,21 +43,22 @@ int ccreate (void* (*start)(void*), void *arg, int prio){
      schedulerInitialize();
 
     TCB_t *new_thread = (TCB_t *) malloc(sizeof(TCB_t));
+
     new_thread->tid = getNewTid(); //vamos usar a main como 0, aí vai facilitar no cjoin
     new_thread->state = PROCST_APTO;
     new_thread->prio = 0;
-    new_thread->joinedWaitingTo = -1;
+    new_thread->joinedWaitingToFinish = -1;
     new_thread->joinedBeingWaitBy = -1;
     new_thread->isSuspended = false;
 
+    getcontext(&(new_thread->context));
     new_thread->context.uc_link = getContextToFinishProcess(); //como gerenciar os contextos sem ter certeza de que vai ter outro?
     new_thread->context.uc_stack.ss_sp = malloc(STACKMEM); //como liberar essa memória depois? Colocar um processo só pra garbage colection?
     new_thread->context.uc_stack.ss_size = STACKMEM;
     new_thread->context.uc_stack.ss_flags = 0;
-
     makecontext(&(new_thread->context), (void (*)(void)) start, 1, arg);
 
-    int status = putInReadyQueue(new_thread);
+    int status = includeInReadyList(new_thread);
 
     if(status < 0)
         return status;
@@ -87,19 +88,23 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int cjoin(int tid){
-    TCB_t* joined_thread = getTidFromReadyQueue(tid);
-
+    TCB_t* joined_thread = getTidFromReadyList(tid);
+    int status = 0;//refactor
+    //pra evitar que mais de uma função se joine
     if(joined_thread != NULL && joined_thread->joinedBeingWaitBy < 0){
         TCB_t *executing_thread = getExecutingThread();
-        executing_thread->joinedWaitingTo = tid;
+        executing_thread->joinedWaitingToFinish = tid;
         joined_thread->joinedBeingWaitBy = executing_thread->tid;
 
         getcontext(&(executing_thread->context));
-        int status =  blockExecutingThread();
-        if(status < 0)
-            return -1;
+        //quando a main voltar pra cá ela não vai ser bloqueada novamente, com esse caso
+        if(executing_thread->joinedBeingWaitBy < 0){
+            status =  blockExecutingThread();
+            dispatch();
+            if(status < 0)
+                return -1;
+        }
 
-        dispatch();
         return 0;
     }
 

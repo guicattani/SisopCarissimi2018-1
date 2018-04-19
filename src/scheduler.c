@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define STACKMEM 8192
+#define STACKMEM 64000
 
 /*O escalonador a ser implementado é do tipo FIFO não preemptivo sem prioridades.
 Dessa forma, sempre que uma thread for posta no estado apto, ela será inserida no final da fila de threads aptas a executar.
@@ -27,6 +27,77 @@ static TCB_t* executing_thread = NULL;
 
 //contexto para liberar memória depois que thread executar
 ucontext_t context_to_finish_thread;
+
+void printListsAndExecuting(void){
+    FirstFila2(&filaApto);
+    FirstFila2(&filaBloqueado);
+    FirstFila2(&filaAptoSuspenso);
+    FirstFila2(&filaBloqueadoSuspenso);
+
+    if(executing_thread == NULL)
+        printf("\n!!nada em execução!!");
+    else
+        printf("\nEm execução: %d", executing_thread->tid);
+
+    struct sFilaNode2* node;
+    TCB_t* threadBeingPrinted = NULL;
+
+    node = GetAtIteratorFila2(&filaApto);
+    if(node != NULL)
+        threadBeingPrinted = node->node;
+
+    printf("\nFila aptos: ");
+    while(threadBeingPrinted != NULL){
+        node = GetAtIteratorFila2(&filaApto);
+        threadBeingPrinted = node->node;
+        printf(" %d",threadBeingPrinted->tid);
+
+        if(NextFila2(&filaApto) == -NXTFILA_ENDQUEUE)
+            threadBeingPrinted = NULL;
+    }
+
+    node = GetAtIteratorFila2(&filaBloqueado);
+    if(node != NULL)
+        threadBeingPrinted = node->node;
+
+    printf("\nFila bloqueados: ");
+    while(threadBeingPrinted != NULL){
+        node = GetAtIteratorFila2(&filaBloqueado);
+        threadBeingPrinted = node->node;
+        printf(" %d",threadBeingPrinted->tid);
+
+        if(NextFila2(&filaBloqueado) == -NXTFILA_ENDQUEUE)
+            threadBeingPrinted = NULL;
+    }
+
+    node = GetAtIteratorFila2(&filaAptoSuspenso);
+    if(node != NULL)
+        threadBeingPrinted = node->node;
+
+    printf("\nFila aptos suspensos: ");
+    while(threadBeingPrinted != NULL){
+        node = GetAtIteratorFila2(&filaAptoSuspenso);
+        threadBeingPrinted = node->node;
+        printf(" %d",threadBeingPrinted->tid);
+
+        if(NextFila2(&filaAptoSuspenso) == -NXTFILA_ENDQUEUE)
+            threadBeingPrinted = NULL;
+    }
+
+    node = GetAtIteratorFila2(&filaBloqueadoSuspenso);
+    if(node != NULL)
+        threadBeingPrinted = node->node;
+
+    printf("\nFila bloqueados suspensos: ");
+    while(threadBeingPrinted != NULL){
+        node = GetAtIteratorFila2(&filaBloqueadoSuspenso);
+        threadBeingPrinted = node->node;
+        printf(" %d",threadBeingPrinted->tid);
+
+        if(NextFila2(&filaBloqueadoSuspenso) == -NXTFILA_ENDQUEUE)
+            threadBeingPrinted = NULL;
+    }
+}
 
 /**
 getContextToFinishProcess
@@ -65,6 +136,9 @@ Retorno:
 **/
 void finishThread(){
     if(executing_thread != NULL){
+        if(executing_thread->joinedBeingWaitBy >= 0)
+            unblockThread(executing_thread->joinedBeingWaitBy);
+
         free(executing_thread);
         executing_thread = NULL;
 
@@ -124,46 +198,35 @@ int getNewTid(void){
 
 /**
 (Precisamos de uma função pra cada fila que inserirmos porque no escopo estático não é possível chamar de outro arquivo)
-putInReadyQueue
+putInReadyList
     Bota a thread na fila especificada
 Parâmetros:
-    PFILA2 queue, lista na qual thread será inserida
+    PFILA2 List, lista na qual thread será inserida
     TCB_t *thread, thread que será inserida na lista
 Retorno:
     Se correto:         devolve 0
     Se erro ocorreu:    devolve < 0
 **/
-int putInReadyQueue (TCB_t* thread){
+static int putInList (PFILA2 pointer_list, TCB_t* thread){
     struct sFilaNode2* nodo = (struct sFilaNode2*) malloc(sizeof(struct sFilaNode2));
     nodo->node = thread;
 
-    int retorno = AppendFila2(&filaApto, nodo);
+    int retorno = AppendFila2(pointer_list, nodo);
+    printf("\nputting in list");
+    printListsAndExecuting();
     return retorno;
 }
 
-
-/**
-(Precisamos de uma função pra cada fila que inserirmos porque no escopo estático não é possível chamar de outro arquivo)
-putInBlockedQueue
-    Bota a thread na fila especificada
-Parâmetros:
-    PFILA2 queue, lista na qual thread será inserida
-    TCB_t *thread, thread que será inserida na lista
-Retorno:
-    Se correto:         devolve 0
-    Se erro ocorreu:    devolve < 0
-**/
-int putInBlockedQueue (TCB_t* thread){
-    struct sFilaNode2* nodo = (struct sFilaNode2*) malloc(sizeof(struct sFilaNode2));
-    nodo->node = thread;
-
-    int retorno = AppendFila2(&filaBloqueado, nodo);
-    return retorno;
+int includeInReadyList (TCB_t* thread){
+    return putInList(&filaApto, thread);
 }
 
+int includeInBlockedList (TCB_t* thread){
+    return putInList(&filaBloqueado, thread);
+}
 
 /**
-getTidFromReadyQueue
+getTidFromReadyList
     Pega o tid da fila de aptos
 Parâmetros:
     int tid, tid a ser procurada
@@ -173,24 +236,54 @@ Retorno:
 **/
 
 //TODO LIMPAR ESSA FUNÇÃO ASAP!
-TCB_t* getTidFromReadyQueue(int tid){
+TCB_t* getTidFromReadyList(int tid){
     FirstFila2(&filaApto);
 
-    struct sFilaNode2* node = (struct sFilaNode2*) malloc(sizeof(struct sFilaNode2));
+    struct sFilaNode2* node;
     TCB_t* threadBeingSearched = NULL;
 
     node = GetAtIteratorFila2(&filaApto);
-    threadBeingSearched = node->node;
+    if(node != NULL)
+        threadBeingSearched = node->node;
 
     while(threadBeingSearched != NULL && threadBeingSearched->tid != tid){
-        if(NextFila2(&filaApto) != -NXTFILA_ENDQUEUE){
-            node = GetAtIteratorFila2(&filaApto);
-            threadBeingSearched = node->node;
-        }
-        else
+        node = GetAtIteratorFila2(&filaApto);
+        threadBeingSearched = node->node;
+
+        if(NextFila2(&filaApto) == -NXTFILA_ENDQUEUE)
             threadBeingSearched = NULL;
     }
-    free(node);
+    return threadBeingSearched;
+}
+
+/**
+getTidFromBlockedList
+    Pega o tid da fila de bloqueados
+Parâmetros:
+    int tid, tid a ser procurada
+Retorno:
+    Se correto:         devolve TCB_t* da thread
+    Se erro ocorreu:    devolve NULL
+**/
+
+//TODO LIMPAR ESSA FUNÇÃO ASAP!
+TCB_t* getTidFromBlockedList(int tid){
+    FirstFila2(&filaBloqueado);
+
+    struct sFilaNode2* node;
+    TCB_t* threadBeingSearched = NULL;
+
+    node = GetAtIteratorFila2(&filaBloqueado);
+    if(node != NULL)
+        threadBeingSearched = node->node;
+
+    while(threadBeingSearched != NULL && threadBeingSearched->tid != tid){
+        node = GetAtIteratorFila2(&filaBloqueado);
+        threadBeingSearched = node->node;
+
+        if(NextFila2(&filaBloqueado) == -NXTFILA_ENDQUEUE)
+            threadBeingSearched = NULL;
+    }
     return threadBeingSearched;
 }
 
@@ -204,9 +297,13 @@ Retorno:
     void
 **/
 void dispatch(void){
+    printf("\ndispatching");
+    printListsAndExecuting();
+    struct sFilaNode2* node;
     if(executing_thread == NULL){
         FirstFila2(&filaApto);
-        TCB_t* up_next_thread = GetAtIteratorFila2(&filaApto);
+        node = GetAtIteratorFila2(&filaApto);
+        TCB_t* up_next_thread = node->node;
 
         if(up_next_thread != NULL){
             up_next_thread->state = PROCST_EXEC;
@@ -214,7 +311,6 @@ void dispatch(void){
 
             DeleteAtIteratorFila2(&filaApto);
 
-            //TODO ERRO TA AQUI
             setcontext(&(executing_thread->context));
         }
     }
@@ -234,11 +330,51 @@ int blockExecutingThread(void){
     int status = -1;
     if(executing_thread != NULL){
         executing_thread->state = PROCST_BLOQ;
-        status = putInBlockedQueue(executing_thread);
+        status = includeInBlockedList(executing_thread);
 
         executing_thread = NULL;
     }
     return status;
+}
+
+/**
+unblockExecutingThread
+    Bota no estado bloqueado a thread que está rodando
+Parâmetros:
+    void
+Retorno:
+    Se correto:         devolve 0
+    Se erro ocorreu:    devolve < 0
+**/
+int unblockThread(int tid){
+    FirstFila2(&filaBloqueado);
+
+    struct sFilaNode2* node;
+    TCB_t* threadBeingSearched = NULL;
+
+    node = GetAtIteratorFila2(&filaBloqueado);
+    if(node != NULL)
+        threadBeingSearched = node->node;
+
+    while(threadBeingSearched != NULL && threadBeingSearched->tid != tid){
+        node = GetAtIteratorFila2(&filaBloqueado);
+        threadBeingSearched = node->node;
+
+        if(NextFila2(&filaBloqueado) == -NXTFILA_ENDQUEUE)
+            threadBeingSearched = NULL;
+    }
+
+    if(threadBeingSearched != NULL){
+        DeleteAtIteratorFila2(&filaBloqueado);
+
+        threadBeingSearched->state = PROCST_APTO;
+        threadBeingSearched->joinedBeingWaitBy = -1;
+        putInList(&filaApto, threadBeingSearched);
+        return 0;
+    }
+
+
+    return -1;
 }
 
 
