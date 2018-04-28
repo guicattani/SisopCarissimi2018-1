@@ -307,6 +307,7 @@ void dispatch(void){
 
         if(up_next_thread != NULL){
             up_next_thread->state = PROCST_EXEC;
+            up_next_thread->backFromTheDead = true;
             executing_thread = up_next_thread;
 
             DeleteAtIteratorFila2(&filaApto);
@@ -341,7 +342,7 @@ int blockExecutingThread(void){
 unblockExecutingThread
     Bota no estado bloqueado a thread que está rodando
 Parâmetros:
-    void
+    int tid  -> thread id que vai ser desbloqueada
 Retorno:
     Se correto:         devolve 0
     Se erro ocorreu:    devolve < 0
@@ -368,7 +369,7 @@ int unblockThread(int tid){
         DeleteAtIteratorFila2(&filaBloqueado);
 
         threadBeingSearched->state = PROCST_APTO;
-        threadBeingSearched->joinedBeingWaitBy = -1;
+        threadBeingSearched->joinedWaitingToFinish = -1;
         putInList(&filaApto, threadBeingSearched);
         return 0;
     }
@@ -377,6 +378,158 @@ int unblockThread(int tid){
     return -1;
 }
 
+
+/**
+yieldExecutingThread
+    Tira voluntariamente de execução thread que está rodando
+Parâmetros:
+    void
+Retorno:
+    Se correto:         devolve 0
+    Se erro ocorreu:    devolve < 0
+**/
+int yieldExecutingThread(void){
+    int status = -1;
+    if(executing_thread != NULL){
+        executing_thread->state = PROCST_APTO;
+        status = includeInReadyList(executing_thread);
+
+        executing_thread = NULL;
+    }
+    return status;
+}
+
+
+/**
+suspendThread
+    Suspende a thread especificada
+Parâmetros:
+    int tid -> thread id que vai ser suspensa
+Retorno:
+    Se correto:         devolve 0
+    Se erro ocorreu:    devolve < 0
+**/
+int suspendThread(int tid){
+    FirstFila2(&filaBloqueado);
+    FirstFila2(&filaApto);
+
+    bool foundInBlocked = false;
+
+    struct sFilaNode2* node;
+    TCB_t* threadBeingSearched = NULL;
+
+    node = GetAtIteratorFila2(&filaBloqueado);
+    if(node != NULL)
+        threadBeingSearched = node->node;
+
+    while(threadBeingSearched != NULL && threadBeingSearched->tid != tid){
+        node = GetAtIteratorFila2(&filaBloqueado);
+        threadBeingSearched = node->node;
+
+        if(NextFila2(&filaBloqueado) == -NXTFILA_ENDQUEUE)
+            threadBeingSearched = NULL;
+    }
+    if(threadBeingSearched != NULL)
+        foundInBlocked = true;
+
+    if(!foundInBlocked){ //TODO tirar um método dessa função de procurar na lista
+        node = GetAtIteratorFila2(&filaApto);
+        if(node != NULL)
+            threadBeingSearched = node->node;
+
+        while(threadBeingSearched != NULL && threadBeingSearched->tid != tid){
+            node = GetAtIteratorFila2(&filaApto);
+            threadBeingSearched = node->node;
+
+            if(NextFila2(&filaApto) == -NXTFILA_ENDQUEUE)
+                threadBeingSearched = NULL;
+        }
+        if (threadBeingSearched == NULL)
+            return -1;
+    }
+
+    if(threadBeingSearched != NULL && foundInBlocked){
+        DeleteAtIteratorFila2(&filaBloqueado);
+
+        threadBeingSearched->state = PROCST_BLOQ_SUS;
+        putInList(&filaBloqueadoSuspenso, threadBeingSearched);
+        return 0;
+    }
+    else{
+        DeleteAtIteratorFila2(&filaApto);
+
+        threadBeingSearched->state = PROCST_APTO_SUS;
+        putInList(&filaAptoSuspenso, threadBeingSearched);
+        return 0;
+    }
+
+}
+
+
+/**
+resumeThread
+    Resume a thread especificada para apto ou bloqueado
+Parâmetros:
+    int tid -> thread id que vai ser resumida
+Retorno:
+    Se correto:         devolve 0
+    Se erro ocorreu:    devolve < 0
+**/
+int resumeThread(int tid){
+    FirstFila2(&filaBloqueadoSuspenso);
+    FirstFila2(&filaAptoSuspenso);
+
+    bool foundInBlocked = false;
+
+    struct sFilaNode2* node;
+    TCB_t* threadBeingSearched = NULL;
+
+    node = GetAtIteratorFila2(&filaBloqueadoSuspenso);
+    if(node != NULL)
+        threadBeingSearched = node->node;
+
+    while(threadBeingSearched != NULL && threadBeingSearched->tid != tid){
+        node = GetAtIteratorFila2(&filaBloqueadoSuspenso);
+        threadBeingSearched = node->node;
+
+        if(NextFila2(&filaBloqueadoSuspenso) == -NXTFILA_ENDQUEUE)
+            threadBeingSearched = NULL;
+    }
+    if(threadBeingSearched != NULL)
+        foundInBlocked = true;
+
+    if(!foundInBlocked){ //TODO tirar um método dessa função de procurar na lista
+        node = GetAtIteratorFila2(&filaAptoSuspenso);
+        if(node != NULL)
+            threadBeingSearched = node->node;
+
+        while(threadBeingSearched != NULL && threadBeingSearched->tid != tid){
+            node = GetAtIteratorFila2(&filaAptoSuspenso);
+            threadBeingSearched = node->node;
+
+            if(NextFila2(&filaAptoSuspenso) == -NXTFILA_ENDQUEUE)
+                threadBeingSearched = NULL;
+        }
+        if (threadBeingSearched == NULL)
+            return -1;
+    }
+
+    if(threadBeingSearched != NULL && foundInBlocked){
+        DeleteAtIteratorFila2(&filaBloqueadoSuspenso);
+
+        threadBeingSearched->state = PROCST_BLOQ;
+        putInList(&filaBloqueado, threadBeingSearched);
+        return 0;
+    }
+    else{
+        DeleteAtIteratorFila2(&filaAptoSuspenso);
+
+        threadBeingSearched->state = PROCST_APTO;
+        putInList(&filaApto, threadBeingSearched);
+        return 0;
+    }
+
+}
 
 
 //TODO lógica de semáforos

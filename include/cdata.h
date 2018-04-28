@@ -35,6 +35,7 @@ typedef struct s_TCB {
 	int         joinedBeingWaitBy;
 
 	bool        isSuspended;
+	bool        backFromTheDead;
 
 } TCB_t;
 

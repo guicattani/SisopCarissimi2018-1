@@ -50,10 +50,11 @@ int ccreate (void* (*start)(void*), void *arg, int prio){
     new_thread->joinedWaitingToFinish = -1;
     new_thread->joinedBeingWaitBy = -1;
     new_thread->isSuspended = false;
+    new_thread->backFromTheDead = false;
 
     getcontext(&(new_thread->context));
-    new_thread->context.uc_link = getContextToFinishProcess(); //como gerenciar os contextos sem ter certeza de que vai ter outro?
-    new_thread->context.uc_stack.ss_sp = malloc(STACKMEM); //como liberar essa memória depois? Colocar um processo só pra garbage colection?
+    new_thread->context.uc_link = getContextToFinishProcess();
+    new_thread->context.uc_stack.ss_sp = malloc(STACKMEM);
     new_thread->context.uc_stack.ss_size = STACKMEM;
     new_thread->context.uc_stack.ss_flags = 0;
     makecontext(&(new_thread->context), (void (*)(void)) start, 1, arg);
@@ -75,7 +76,19 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int cyield(void){
-    //TODO implementação
+    TCB_t *executing_thread = getExecutingThread();
+    executing_thread->backFromTheDead = false;
+    getcontext(&(executing_thread->context));
+
+    if(executing_thread->backFromTheDead == false){
+        int status = yieldExecutingThread();
+
+        if(status < 0)
+            return -1;
+
+        dispatch();
+    }
+
     return 0;
 };
 
@@ -97,8 +110,9 @@ int cjoin(int tid){
         joined_thread->joinedBeingWaitBy = executing_thread->tid;
 
         getcontext(&(executing_thread->context));
-        //quando a main voltar pra cá ela não vai ser bloqueada novamente, com esse caso
-        if(executing_thread->joinedBeingWaitBy < 0){
+        //quando a thread que chamar voltar pra cá ela não vai ser bloqueada novamente, com esse caso
+        //podemos usar o backfromthedead também
+        if(executing_thread->joinedWaitingToFinish >= 0){
             status =  blockExecutingThread();
             dispatch();
             if(status < 0)
@@ -120,8 +134,7 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int csuspend(int tid){
-    //TODO implementação
-    return 0;
+    return suspendThread(tid);
 };
 
 /******************************************************************************
@@ -132,8 +145,7 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int cresume(int tid){
-    //TODO implementação
-    return 0;
+    return resumeThread(tid);
 };
 
 /******************************************************************************

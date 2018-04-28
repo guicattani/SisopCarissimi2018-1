@@ -34,3 +34,38 @@
 	<stdbool.h>
 	<stdlib.h>
 
+1524854328 source:/home/aluno/SisopCarissimi2018-1/src/cthread.c
+	"../include/support.h"
+	"../include/scheduler.h"
+	"../include/cthread.h"
+	"../include/cdata.h"
+	<stdio.h>
+	<stdbool.h>
+	<stdlib.h>
+
+1524851997 /home/aluno/SisopCarissimi2018-1/include/support.h
+
+1524851997 /home/aluno/SisopCarissimi2018-1/include/scheduler.h
+	"../include/support.h"
+	"../include/cdata.h"
+	<ucontext.h>
+	<stdio.h>
+	<stdbool.h>
+	<stdlib.h>
+
+1524851997 /home/aluno/SisopCarissimi2018-1/include/cdata.h
+	"ucontext.h"
+	<stdbool.h>
+
+1524851997 /home/aluno/SisopCarissimi2018-1/include/cthread.h
+	"support.h"
+
+1524851997 source:/home/aluno/SisopCarissimi2018-1/src/scheduler.c
+	"../include/support.h"
+	"../include/cdata.h"
+	"../include/scheduler.h"
+	<ucontext.h>
+	<stdio.h>
+	<stdbool.h>
+	<stdlib.h>
+
