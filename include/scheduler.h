@@ -89,6 +89,7 @@ Retorno:
 TCB_t* getTidFromReadyList(int tid);
 /**
 
+
 getTidFromBlockedList
     Pega o tid da fila de bloqueados
 Parâmetros:
@@ -123,6 +124,7 @@ Retorno:
 int blockExecutingThread(void);
 /**
 
+
 unblockThread
     Tira no estado bloqueado a thread especificada
 Parâmetros:
@@ -134,4 +136,37 @@ Retorno:
 int unblockThread(int tid);
 
 
-//static void printListsAndExecuting(void);
+/**
+yieldExecutingThread
+    Tira voluntariamente de execução thread que está rodando
+Parâmetros:
+    void
+Retorno:
+    Se correto:         devolve 0
+    Se erro ocorreu:    devolve < 0
+**/
+int yieldExecutingThread(void);
+
+
+/**
+suspendThread
+    Suspende a thread especificada
+Parâmetros:
+    int tid -> thread id que vai ser suspensa
+Retorno:
+    Se correto:         devolve 0
+    Se erro ocorreu:    devolve < 0
+**/
+int suspendThread(int tid);
+
+
+/**
+resumeThread
+    Resume a thread especificada para apto ou bloqueado
+Parâmetros:
+    int tid -> thread id que vai ser resumida
+Retorno:
+    Se correto:         devolve 0
+    Se erro ocorreu:    devolve < 0
+**/
+int resumeThread(int tid);

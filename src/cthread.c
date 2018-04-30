@@ -50,8 +50,7 @@ int ccreate (void* (*start)(void*), void *arg, int prio){
     new_thread->prio = 0;
     new_thread->joinedWaitingToFinish = -1;
     new_thread->joinedBeingWaitBy = -1;
-    new_thread->isSuspended = false;
-    new_thread->backFromTheDead = false;
+    new_thread->wasJustScheduled = false;
 
     getcontext(&(new_thread->context));
     new_thread->context.uc_link = getContextToFinishProcess();
@@ -78,10 +77,10 @@ Retorno:
 ******************************************************************************/
 int cyield(void){
     TCB_t *executing_thread = getExecutingThread();
-    executing_thread->backFromTheDead = false;
+    executing_thread->wasJustScheduled = false;
     getcontext(&(executing_thread->context));
 
-    if(executing_thread->backFromTheDead == false){
+    if(executing_thread->wasJustScheduled == false){
         int status = yieldExecutingThread();
 
         if(status < 0)
@@ -112,7 +111,7 @@ int cjoin(int tid){
 
         getcontext(&(executing_thread->context));
         //quando a thread que chamar voltar pra cá ela não vai ser bloqueada novamente, com esse caso
-        //podemos usar o backfromthedead também
+        //podemos usar o wasJustScheduled também
         if(executing_thread->joinedWaitingToFinish >= 0){
             status =  blockExecutingThread();
             dispatch();
@@ -135,7 +134,11 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int csuspend(int tid){
-    return suspendThread(tid);
+    TCB_t *executing_thread = getExecutingThread();
+    if(executing_thread->tid != tid)
+        return suspendThread(tid);
+
+    return -1;
 };
 
 /******************************************************************************
@@ -151,7 +154,7 @@ int cresume(int tid){
 
 /******************************************************************************
 Parâmetros:
-	sem:	ponteiro para uma variável do tipo 
+	sem:	ponteiro para uma variável do tipo
 _t. Aponta para uma estrutura de dados que representa a variável semáforo.
 	count: valor a ser usado na inicialização do semáforo. Representa a quantidade de recursos controlados pelo semáforo.
 Retorno:
@@ -161,7 +164,7 @@ Retorno:
 int csem_init(csem_t *sem, int count){
     //TODO implementação
     sem->count = 1;
-    sem->fila = malloc(SIZEOFSEM); 
+    sem->fila = malloc(SIZEOFSEM);
     return 0;
 };
 

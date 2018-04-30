@@ -34,8 +34,7 @@ typedef struct s_TCB {
 	int         joinedWaitingToFinish;
 	int         joinedBeingWaitBy;
 
-	bool        isSuspended;
-	bool        backFromTheDead;
+	bool        wasJustScheduled; //pra quando voltar para um join ou um yield siga a sua execução e não saia da execução novamente
 
 } TCB_t;
 
