@@ -15,19 +15,24 @@ LIB_DIR=./lib
 INC_DIR=./include
 BIN_DIR=./bin
 SRC_DIR=./src
+EXEC = ./DebugConsole/main.c
 
-all: regra1 regra2 regran
+all: scheduler cthread lcthread
 
-regra1: #dependências para a regra1
-	$(CC) -o $(BIN_DIR)regra1 $(SRC_DIR)regra1.c -Wall
+lcthread: $(BIN_DIR)/cthread.o $(BIN_DIR)/support.o $(BIN_DIR)/scheduler.o#dependências para a regra1
+	ar rcs $(LIB_DIR)/cthread.a $(BIN_DIR)/cthread.o $(BIN_DIR)/support.o $(BIN_DIR)/scheduler.o
 
-regra2: #dependências para a regra2
-	$(CC) -o $(BIN_DIR)regra2 $(SRC_DIR)regra2.c -Wall
+scheduler: $(SRC_DIR)/scheduler.c $(INC_DIR)/support.h $(INC_DIR)/cdata.h
+	$(CC) -c $(SRC_DIR)/scheduler.c -o $(BIN_DIR)/scheduler.o
 
-regran: #dependências para a regran
-	$(CC) -o $(BIN_DIR)regran $(SRC_DIR)regran.c -Wall
+cthread: $(SRC_DIR)/cthread.c $(INC_DIR)/support.h $(INC_DIR)/scheduler.h $(INC_DIR)/cthread.h $(INC_DIR)/cdata.h
+	$(CC) -c $(SRC_DIR)/cthread.c $(BIN_DIR)/scheduler.o -o $(BIN_DIR)/cthread.o
+
+
+
 
 clean:
-	rm -rf $(LIB_DIR)/*.a $(BIN_DIR)/*.o $(SRC_DIR)/*~ $(INC_DIR)/*~ *~
+	rm -rf $(LIB_DIR)/*.a $(BIN_DIR)/cthread.o $(BIN_DIR)/scheduler.o $(SRC_DIR)/*~ $(INC_DIR)/*~ *~
+
 
 

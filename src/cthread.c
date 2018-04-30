@@ -8,6 +8,7 @@
 
 #define STACKMEM 8192 // fica no header e aqui tambem?
 #define SIZEIDENTIFY 67
+#define SIZEOFSEM 50 // alterar para o numero explicitado para o limite do semáforo conforme a definicao
 
 /******************************************************************************
 Parâmetros:
@@ -150,7 +151,8 @@ int cresume(int tid){
 
 /******************************************************************************
 Parâmetros:
-	sem:	ponteiro para uma variável do tipo csem_t. Aponta para uma estrutura de dados que representa a variável semáforo.
+	sem:	ponteiro para uma variável do tipo 
+_t. Aponta para uma estrutura de dados que representa a variável semáforo.
 	count: valor a ser usado na inicialização do semáforo. Representa a quantidade de recursos controlados pelo semáforo.
 Retorno:
 	Se correto => 0 (zero)
@@ -158,6 +160,8 @@ Retorno:
 ******************************************************************************/
 int csem_init(csem_t *sem, int count){
     //TODO implementação
+    sem->count = 1;
+    sem->fila = malloc(SIZEOFSEM); 
     return 0;
 };
 
