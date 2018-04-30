@@ -295,7 +295,7 @@ Retorno:
     void
 **/
 void dispatch(void){
-    printf("\ndispatching");
+    printf("\ndispatching\n");
     struct sFilaNode2* node;
     if(executing_thread == NULL){
         FirstFila2(&filaApto);
@@ -489,6 +489,7 @@ int suspendThread(int tid){
         return 0;
     }
 
+    return -2;
 }
 
 
@@ -555,7 +556,7 @@ int resumeThread(int tid){
         return 0;
     }
     printf("\nnothing found to resume, not found: %d \n", tid);
-    return -1;
+    return -2;
 
 }
 
