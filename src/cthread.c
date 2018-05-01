@@ -6,10 +6,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define SUCCESS 0;
-#define ERROR -1;
-
 #define SIZEIDENTIFY 67
+#define GROUPNAMESTRING "Guilherme Cattani 243589\nAugusto Timm 113887\nGabriel Warken 179787\n"
 
 /******************************************************************************
 Parâmetros:
@@ -21,14 +19,13 @@ Retorno:
 	Se erro	   => Valor negativo.
 ******************************************************************************/
 int cidentify (char *name, int size) {
-    int index = 0;
-
-    if(name == NULL || size > SIZEIDENTIFY) {
+    if(size < SIZEIDENTIFY) {
         return ERROR;
     }
 
-    for (; index < size; index++) {
-        putchar(name[index]);
+    int index = 0;
+    while ((name[index] = GROUPNAMESTRING[index]) != '\0') {
+        index++;
     }
 
     return SUCCESS;
@@ -203,9 +200,8 @@ int cwait(csem_t *sem) {
     getcontext(&(executingThread->context));
 
     if(sem->count <= 0) { //recurso está ocupado
-        printf("\nRecurso já está sendo usado, bloqueando!\n");
         AppendFila2(sem->fila, executingThread);
-        status =  blockExecutingThread(); //REFACTOR
+        status =  blockExecutingThread();
         if(status < 0) {
             return ERROR;
         }

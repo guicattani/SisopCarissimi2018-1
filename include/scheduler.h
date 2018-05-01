@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define SUCCESS 0;
-#define ERROR -1;
+#define SUCCESS 0
+#define ERROR -1
 
 /**
 getContextToFinishProcess

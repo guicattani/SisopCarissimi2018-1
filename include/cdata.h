@@ -20,6 +20,9 @@
 #define	PROCST_APTO_SUS	5
 #define	PROCST_BLOQ_SUS	6
 
+#define SUCCESS 0
+#define ERROR -1
+
 /* Os campos "tid", "state" e "context" dessa estrutura devem ser mantidos e usados convenientemente
    Pode-se acrescentar outros campos APÓS os campos obrigatórios dessa estrutura
 */

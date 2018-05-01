@@ -1,0 +1,21 @@
+#
+# Makefile para testes
+# 
+
+CC=gcc
+LIB_DIR=../lib
+
+all: scheduler_test semaphore_test
+
+scheduler_test: scheduler_test.c $(LIB_DIR)/libcthread.a
+	$(CC) -o scheduler_test scheduler_test.c $(LIB_DIR)/cthread.a -Wall
+
+semaphore_test: semaphore_test.c $(LIB_DIR)/libcthread.a
+	$(CC) -o semaphore_test semaphore_test.c $(LIB_DIR)/cthread.a -Wall
+
+clean:
+	rm -rf scheduler_test semaphore_test *.o *~
+
+
+
+

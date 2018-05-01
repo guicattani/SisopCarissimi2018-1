@@ -12,9 +12,6 @@
 
 #include "support.h"
 
-#define SUCCESS 0;
-#define ERROR -1;
-
 typedef struct s_sem {
 	int	count;	/* indica se recurso está ocupado ou não (livre > 0, ocupado = 0) */
 	PFILA2	fila; 	/* ponteiro para uma fila de threads bloqueadas no semáforo */
