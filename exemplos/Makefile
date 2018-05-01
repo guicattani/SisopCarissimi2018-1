@@ -5,7 +5,7 @@
 CC=gcc
 LIB_DIR=../lib
 
-all: exemplo mandel teste_vetor series 
+all: exemplo mandel teste_vetor series teste_semaforo_e_escalonador
 
 exemplo: exemplo.c $(LIB_DIR)/cthread.a
 	$(CC) -o exemplo exemplo.c $(LIB_DIR)/cthread.a -Wall
@@ -27,6 +27,9 @@ mandel: mandel.c $(LIB_DIR)/cthread.a
 
 series: series.c $(LIB_DIR)/cthread.a
 	$(CC) -o series series.c $(LIB_DIR)/cthread.a -lm -Wall
+
+teste_semaforo_e_escalonador: teste_semaforo_e_escalonador.c $(LIB_DIR)/cthread.a
+	$(CC) -o teste_semaforo_e_escalonador teste_semaforo_e_escalonador.c $(LIB_DIR)/cthread.a -lm -Wall
 	
 main: main.c $(LIB_DIR)/cthread.a
 	$(CC) -o exemplo main.c $(LIB_DIR)/cthread.a -Wall
