@@ -235,7 +235,6 @@ Retorno:
     Se erro ocorreu:    devolve NULL
 **/
 
-//TODO LIMPAR ESSA FUNÇÃO ASAP!
 TCB_t* getTidFromReadyList(int tid){
     FirstFila2(&filaApto);
 
@@ -266,7 +265,6 @@ Retorno:
     Se erro ocorreu:    devolve NULL
 **/
 
-//TODO LIMPAR ESSA FUNÇÃO ASAP!
 TCB_t* getTidFromBlockedList(int tid){
     FirstFila2(&filaBloqueado);
 
@@ -297,8 +295,7 @@ Retorno:
     void
 **/
 void dispatch(void){
-    printf("\ndispatching");
-    printListsAndExecuting();
+    printf("\ndispatching\n");
     struct sFilaNode2* node;
     if(executing_thread == NULL){
         FirstFila2(&filaApto);
@@ -307,7 +304,7 @@ void dispatch(void){
 
         if(up_next_thread != NULL){
             up_next_thread->state = PROCST_EXEC;
-            up_next_thread->backFromTheDead = true;
+            up_next_thread->wasJustScheduled = true;
             executing_thread = up_next_thread;
 
             DeleteAtIteratorFila2(&filaApto);
@@ -315,6 +312,7 @@ void dispatch(void){
             setcontext(&(executing_thread->context));
         }
     }
+    printListsAndExecuting();
 }
 
 
@@ -349,6 +347,9 @@ Retorno:
 **/
 int unblockThread(int tid){
     FirstFila2(&filaBloqueado);
+    FirstFila2(&filaBloqueadoSuspenso);
+
+    bool foundInBlocked = false;
 
     struct sFilaNode2* node;
     TCB_t* threadBeingSearched = NULL;
@@ -365,12 +366,37 @@ int unblockThread(int tid){
             threadBeingSearched = NULL;
     }
 
-    if(threadBeingSearched != NULL){
+    if (threadBeingSearched != NULL)
+        foundInBlocked = true;
+
+    if(threadBeingSearched == NULL){
+        node = GetAtIteratorFila2(&filaBloqueadoSuspenso);
+        if(node != NULL)
+            threadBeingSearched = node->node;
+
+        while(threadBeingSearched != NULL && threadBeingSearched->tid != tid){
+            node = GetAtIteratorFila2(&filaBloqueadoSuspenso);
+            threadBeingSearched = node->node;
+
+            if(NextFila2(&filaBloqueadoSuspenso) == -NXTFILA_ENDQUEUE)
+                threadBeingSearched = NULL;
+        }
+    }
+
+    if(threadBeingSearched != NULL && foundInBlocked){
         DeleteAtIteratorFila2(&filaBloqueado);
 
         threadBeingSearched->state = PROCST_APTO;
         threadBeingSearched->joinedWaitingToFinish = -1;
         putInList(&filaApto, threadBeingSearched);
+        return 0;
+    }
+    else if (threadBeingSearched != NULL){
+        DeleteAtIteratorFila2(&filaBloqueadoSuspenso);
+
+        threadBeingSearched->state = PROCST_APTO_SUS;
+        threadBeingSearched->joinedWaitingToFinish = -1;
+        putInList(&filaAptoSuspenso, threadBeingSearched);
         return 0;
     }
 
@@ -463,6 +489,7 @@ int suspendThread(int tid){
         return 0;
     }
 
+    return -2;
 }
 
 
@@ -521,13 +548,15 @@ int resumeThread(int tid){
         putInList(&filaBloqueado, threadBeingSearched);
         return 0;
     }
-    else{
+    else if (threadBeingSearched != NULL){
         DeleteAtIteratorFila2(&filaAptoSuspenso);
 
         threadBeingSearched->state = PROCST_APTO;
         putInList(&filaApto, threadBeingSearched);
         return 0;
     }
+    printf("\nnothing found to resume, not found: %d \n", tid);
+    return -2;
 
 }
 
