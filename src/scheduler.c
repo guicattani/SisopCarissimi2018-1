@@ -410,7 +410,7 @@ Retorno:
     Se erro ocorreu:    devolve < 0
 **/
 int suspendThread(int tid){
-    FirstFila2(&filaBloqueado);
+    FirstFila2(&filaBloqueado); //Deveria ser a fila de bloqueados suspensos e nao apenas bloqueado
     FirstFila2(&filaApto);
 
     bool foundInBlocked = false;

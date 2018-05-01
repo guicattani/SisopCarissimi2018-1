@@ -8,7 +8,6 @@
 
 #define STACKMEM 8192 // fica no header e aqui tambem?
 #define SIZEIDENTIFY 67
-#define SIZEOFSEM 50 // alterar para o numero explicitado para o limite do semáforo conforme a definicao
 
 /******************************************************************************
 Parâmetros:
@@ -161,7 +160,7 @@ Retorno:
 int csem_init(csem_t *sem, int count){
     //TODO implementação
     sem->count = 1;
-    sem->fila = malloc(SIZEOFSEM); 
+    CreateFila2(sem->fila);
     return 0;
 };
 
@@ -175,7 +174,16 @@ Retorno:
 ******************************************************************************/
 int cwait(csem_t *sem){
     //TODO implementação
-    return 0;
+    int status  = 0;
+    if(sem->count <= 0){ //recurso está ocupado
+        sem->count -=1;
+    }
+    else{
+         TCB_t *executing_thread = getExecutingThread();
+         AppendFila2(sem->fila, executing_thread);
+         status =  blockExecutingThread();
+    }
+    return status;
 };
 
 
