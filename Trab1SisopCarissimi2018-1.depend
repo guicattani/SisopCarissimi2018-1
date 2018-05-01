@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1525092260 source:/home/aluno/Trabalho/src/cthread.c
+1525192285 source:/home/aluno/Trabalho/src/cthread.c
 	"../include/support.h"
 	"../include/scheduler.h"
 	"../include/cthread.h"
@@ -10,10 +10,10 @@
 
 1521579001 /home/aluno/Trabalho/include/support.h
 
-1523734090 /home/aluno/Trabalho/include/cthread.h
+1525191141 /home/aluno/Trabalho/include/cthread.h
 	"support.h"
 
-1525088319 /home/aluno/Trabalho/include/scheduler.h
+1525190778 /home/aluno/Trabalho/include/scheduler.h
 	"../include/support.h"
 	"../include/cdata.h"
 	<ucontext.h>
@@ -21,7 +21,7 @@
 	<stdbool.h>
 	<stdlib.h>
 
-1525092208 /home/aluno/Trabalho/include/cdata.h
+1525178755 /home/aluno/Trabalho/include/cdata.h
 	"ucontext.h"
 	<stdbool.h>
 

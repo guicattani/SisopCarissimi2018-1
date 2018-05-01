@@ -6,9 +6,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define STACKMEM 8192 // fica no header e aqui tambem?
+#define SUCCESS 0;
+#define ERROR -1;
+
 #define SIZEIDENTIFY 67
-#define SIZEOFSEM 50 // alterar para o numero explicitado para o limite do semáforo conforme a definicao
 
 /******************************************************************************
 Parâmetros:
@@ -19,17 +20,19 @@ Retorno:
 	Se correto => 0 (zero)
 	Se erro	   => Valor negativo.
 ******************************************************************************/
-int cidentify (char *name, int size){
+int cidentify (char *name, int size) {
     int index = 0;
 
-    if(name == NULL || size > SIZEIDENTIFY)
-        return -1;
+    if(name == NULL || size > SIZEIDENTIFY) {
+        return ERROR;
+    }
 
-    for (; index < size; index++){
+    for (; index < size; index++) {
         putchar(name[index]);
     }
-    return 0;
-};
+
+    return SUCCESS;
+}
 
 /******************************************************************************
 Parâmetros:
@@ -40,32 +43,34 @@ Retorno:
 	Se correto => Valor positivo, que representa o identificador da thread criada
 	Se erro	   => Valor negativo.
 ******************************************************************************/
-int ccreate (void* (*start)(void*), void *arg, int prio){
+int ccreate (void* (*start)(void*), void *arg, int prio) {
      schedulerInitialize();
 
-    TCB_t *new_thread = (TCB_t *) malloc(sizeof(TCB_t));
+    TCB_t *newThread = (TCB_t *) malloc(sizeof(TCB_t));
 
-    new_thread->tid = getNewTid(); //vamos usar a main como 0, aí vai facilitar no cjoin
-    new_thread->state = PROCST_APTO;
-    new_thread->prio = 0;
-    new_thread->joinedWaitingToFinish = -1;
-    new_thread->joinedBeingWaitBy = -1;
-    new_thread->wasJustScheduled = false;
+    newThread->tid = getNewTid(); //vamos usar a main como 0, aí vai facilitar no cjoin
+    newThread->state = PROCST_APTO;
+    newThread->prio = 0;
+    newThread->joinedWaitingToFinish = -1;
+    newThread->joinedBeingWaitBy = -1;
+    newThread->wasJustScheduled = false;
 
-    getcontext(&(new_thread->context));
-    new_thread->context.uc_link = getContextToFinishProcess();
-    new_thread->context.uc_stack.ss_sp = malloc(STACKMEM);
-    new_thread->context.uc_stack.ss_size = STACKMEM;
-    new_thread->context.uc_stack.ss_flags = 0;
-    makecontext(&(new_thread->context), (void (*)(void)) start, 1, arg);
+    getcontext(&(newThread->context));
+    newThread->context.uc_link = getContextToFinishProcess();
+    newThread->context.uc_stack.ss_sp = (char*) malloc(SIGSTKSZ);
+    newThread->context.uc_stack.ss_size = SIGSTKSZ;
+    newThread->context.uc_stack.ss_flags = 0;
+    makecontext(&(newThread->context), (void (*)(void)) start, 1, arg);
 
-    int status = includeInReadyList(new_thread);
+    int status = includeInReadyList(newThread);
 
-    if(status < 0)
-        return status;
-    else
-        return new_thread->tid;
-};
+    if(status < 0) {
+        return ERROR;
+    }
+    else {
+        return newThread->tid;
+    }
+}
 
 
 /******************************************************************************
@@ -75,22 +80,26 @@ Retorno:
 	Se correto => 0 (zero)
 	Se erro	   => Valor negativo.
 ******************************************************************************/
-int cyield(void){
-    TCB_t *executing_thread = getExecutingThread();
-    executing_thread->wasJustScheduled = false;
-    getcontext(&(executing_thread->context));
+int cyield(void) {
+    TCB_t *executingThread = getExecutingThread();
+    if(executingThread == NULL) {
+        return ERROR;
+    }
 
-    if(executing_thread->wasJustScheduled == false){
+    executingThread->wasJustScheduled = false;
+    getcontext(&(executingThread->context));
+
+    if(executingThread->wasJustScheduled == false) {
         int status = yieldExecutingThread();
-
-        if(status < 0)
-            return -1;
+        if(status < 0) {
+            return ERROR;
+        }
 
         dispatch();
     }
 
-    return 0;
-};
+    return SUCCESS;
+}
 
 
 /******************************************************************************
@@ -100,31 +109,32 @@ Retorno:
 	Se correto => 0 (zero)
 	Se erro	   => Valor negativo.
 ******************************************************************************/
-int cjoin(int tid){
-    TCB_t* joined_thread = getTidFromReadyList(tid);
-    int status = 0;//refactor
+int cjoin(int tid) {
+    TCB_t* joinedThread = getTidFromReadyList(tid);
+    int status = 0;
     //pra evitar que mais de uma função se joine
-    if(joined_thread != NULL && joined_thread->joinedBeingWaitBy < 0){
-        TCB_t *executing_thread = getExecutingThread();
-        executing_thread->joinedWaitingToFinish = tid;
-        joined_thread->joinedBeingWaitBy = executing_thread->tid;
+    if(joinedThread != NULL && joinedThread->joinedBeingWaitBy < 0) {
+        TCB_t *executingThread = getExecutingThread();
+        executingThread->joinedWaitingToFinish = tid;
+        joinedThread->joinedBeingWaitBy = executingThread->tid;
 
-        getcontext(&(executing_thread->context));
+        getcontext(&(executingThread->context));
         //quando a thread que chamar voltar pra cá ela não vai ser bloqueada novamente, com esse caso
         //podemos usar o wasJustScheduled também
-        if(executing_thread->joinedWaitingToFinish >= 0){
+        if(executingThread->joinedWaitingToFinish >= 0) {
             status =  blockExecutingThread();
+            if(status < 0) {
+                return ERROR;
+            }
+
             dispatch();
-            if(status < 0)
-                return -1;
         }
 
-        return 0;
+        return SUCCESS;
     }
 
-
-    return -1;
-};
+    return ERROR;
+}
 
 /******************************************************************************
 Parâmetros:
@@ -133,13 +143,14 @@ Retorno:
 	Se correto => 0 (zero)
 	Se erro	   => Valor negativo.
 ******************************************************************************/
-int csuspend(int tid){
-    TCB_t *executing_thread = getExecutingThread();
-    if(executing_thread->tid != tid)
+int csuspend(int tid) {
+    TCB_t *executingThread = getExecutingThread();
+    if(executingThread->tid != tid) {
         return suspendThread(tid);
+    }
 
-    return -1;
-};
+    return ERROR;
+}
 
 /******************************************************************************
 Parâmetros:
@@ -148,9 +159,9 @@ Retorno:
 	Se correto => 0 (zero)
 	Se erro	   => Valor negativo.
 ******************************************************************************/
-int cresume(int tid){
+int cresume(int tid) {
     return resumeThread(tid);
-};
+}
 
 /******************************************************************************
 Parâmetros:
@@ -161,11 +172,18 @@ Retorno:
 	Se correto => 0 (zero)
 	Se erro	   => Valor negativo.
 ******************************************************************************/
-int csem_init(csem_t *sem, int count){
-    sem->count = 1;
-    CreateFila2(sem->fila);
-    return 0;
-};
+int csem_init(csem_t *sem, int count) {
+    sem->count = count;
+    sem->fila = (FILA2*) malloc(sizeof(FILA2));
+    int status = CreateFila2(sem->fila);
+
+    if(status < 0) {
+        return ERROR;
+    }
+    else {
+        return SUCCESS;
+    }
+}
 
 
 /******************************************************************************
@@ -175,18 +193,34 @@ Retorno:
 	Se correto => 0 (zero)
 	Se erro	   => Valor negativo.
 ******************************************************************************/
-int cwait(csem_t *sem){
+int cwait(csem_t *sem) {
     int status  = 0;
-    if(sem->count <= 0){ //recurso está ocupado
-        sem->count -=1;
+    if(sem == NULL) {
+        return -1;
     }
-    else{
-         TCB_t *executing_thread = getExecutingThread();
-         AppendFila2(sem->fila, executing_thread);
-         status =  blockExecutingThread();
+
+    TCB_t *executingThread = getExecutingThread();
+    getcontext(&(executingThread->context));
+
+    if(sem->count <= 0) { //recurso está ocupado
+        printf("\nRecurso já está sendo usado, bloqueando!\n");
+        AppendFila2(sem->fila, executingThread);
+        status =  blockExecutingThread(); //REFACTOR
+        if(status < 0) {
+            return ERROR;
+        }
+
+        dispatch();
     }
-    return status;
-};
+    sem->count -=1;
+
+    if(status < 0) {
+        return ERROR;
+    }
+    else {
+        return SUCCESS;
+    }
+}
 
 
 /******************************************************************************
@@ -196,12 +230,25 @@ Retorno:
 	Se correto => 0 (zero)
 	Se erro	   => Valor negativo.
 ******************************************************************************/
-int csignal(csem_t *sem){
-    //TODO implementação
-    return 0;
-};
+int csignal(csem_t *sem) {
+    if(sem == NULL) {
+        return ERROR;
+    }
 
-int test_me(void){
-    printf("OLAR PESSOA, VOCE DEVE MEXER NO PROJETO DA LIB TRAB1SISOP2018-1 // QUANDO QUISER MEXER ALGO PRECISA DAR REBUILD!");
-    return 0;
+    sem->count +=1;
+    FirstFila2(sem->fila);
+    TCB_t *thread = GetAtIteratorFila2(sem->fila);
+    if (thread == NULL) {
+        return SUCCESS;
+    }
+
+    DeleteAtIteratorFila2(sem->fila);
+    int status = unblockThread(thread->tid);
+
+    if(status < 0) {
+        return ERROR;
+    }
+    else {
+        return SUCCESS;
+    }
 }

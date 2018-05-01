@@ -5,6 +5,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#define SUCCESS 0;
+#define ERROR -1;
+
 /**
 getContextToFinishProcess
     devolve um contexto que vai estar atrelado a uma função que termina a execução da thread
